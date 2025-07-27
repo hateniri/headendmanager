@@ -1,0 +1,41 @@
+{
+  "name": "headendmanager",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hateniri/headendmanager.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hateniri/headendmanager/issues"
+  },
+  "homepage": "https://github.com/hateniri/headendmanager#readme",
+  "description": "",
+  "dependencies": {
+    "@types/mapbox-gl": "^3.4.1",
+    "mapbox-gl": "^3.13.0",
+    "next": "^15.4.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "react-map-gl": "^8.0.4",
+    "zustand": "^5.0.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.11",
+    "typescript": "^5.8.3"
+  }
+}
