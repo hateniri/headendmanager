@@ -1004,49 +1004,83 @@ export default function FacilityDetailPage() {
             {/* 電源設備タブ */}
             {activeTab === 'power' && (
               <div className="space-y-6">
-                <div className="bg-white rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">電源設備情報</h3>
-                  {facility.id === 95 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-medium text-gray-900 mb-3">主電源</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-gray-600">総容量</span>
-                            <span className="font-medium">2000 kVA</span>
-                          </div>
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-gray-600">現在使用量</span>
-                            <span className="font-medium">1250 kVA (62.5%)</span>
-                          </div>
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-gray-600">冗長性</span>
-                            <span className="font-medium">N+1</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-gray-900 mb-3">UPS設備</h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-gray-600">容量</span>
-                            <span className="font-medium">500 kVA</span>
-                          </div>
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-gray-600">バックアップ時間</span>
-                            <span className="font-medium">10分</span>
-                          </div>
-                          <div className="flex justify-between py-2 border-b">
-                            <span className="text-gray-600">バッテリー種類</span>
-                            <span className="font-medium">リチウムイオン</span>
-                          </div>
-                        </div>
-                      </div>
+                {facility.id === 95 ? (
+                  <div className="bg-white rounded-lg shadow-sm">
+                    <div className="p-6 border-b">
+                      <h3 className="text-lg font-semibold text-gray-900">電源設備一覧</h3>
                     </div>
-                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">設備区分</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">項目</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">設備名</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">設置場所</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ベンダ名</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">機器名（型番）</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">設置年月</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">耐用年数</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">更新年月</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">容量</th>
+                            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">備考</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {(() => {
+                            const equipment = require('@/data/munakata-power-equipment').munakataPowerEquipment
+                            return equipment.map((item: any) => {
+                              const updateStatus = (() => {
+                                const renewal = new Date(item.renewalDate)
+                                const now = new Date()
+                                const monthsUntilRenewal = (renewal.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30)
+                                if (monthsUntilRenewal < 6) return 'critical'
+                                if (monthsUntilRenewal < 12) return 'warning'
+                                return 'normal'
+                              })()
+                              
+                              return (
+                                <tr key={item.id} className="hover:bg-gray-50">
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.category}</td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{item.type}</td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">{item.name}</td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{item.location}</td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{item.vendor}</td>
+                                  <td className="px-4 py-4 text-sm text-gray-600">
+                                    <div className="max-w-xs truncate" title={item.model}>{item.model}</div>
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{item.installDate}</td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{item.lifespan}年</td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm">
+                                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                                      updateStatus === 'critical' ? 'bg-red-100 text-red-800' :
+                                      updateStatus === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                                      'bg-green-100 text-green-800'
+                                    }`}>
+                                      {item.renewalDate}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">{item.capacity || '-'}</td>
+                                  <td className="px-4 py-4 text-sm text-gray-600">
+                                    <div className="max-w-xs truncate" title={item.remarks}>{item.remarks || '-'}</div>
+                                  </td>
+                                </tr>
+                              )
+                            })
+                          })()}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="p-4 bg-gray-50 text-xs text-gray-600">
+                      <p>※ 更新年月が1年以内：<span className="inline-block w-3 h-3 bg-yellow-100 rounded-full mr-1"></span>黄色、6ヶ月以内：<span className="inline-block w-3 h-3 bg-red-100 rounded-full mr-1"></span>赤色で表示</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-lg p-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">電源設備情報</h3>
                     <p className="text-gray-600">標準的な電源設備を配置しています。</p>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             )}
 
