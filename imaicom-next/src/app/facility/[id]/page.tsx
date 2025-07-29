@@ -73,7 +73,7 @@ export default function FacilityDetailPage() {
   const [fileDownloads, setFileDownloads] = useState<any[]>([])
   const [powerMetrics, setPowerMetrics] = useState<any>(null)
   const [inspectionPhotos, setInspectionPhotos] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState<'overview' | 'organization' | 'equipment' | 'inspection' | 'incident' | 'monitoring' | 'work'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'organization' | 'rack' | 'power' | 'cooling' | 'disaster' | 'fuel' | 'other' | 'inspection' | 'incident' | 'monitoring' | 'work'>('overview')
 
   useEffect(() => {
     // Import facilities dynamically to avoid circular dependencies
@@ -292,14 +292,64 @@ export default function FacilityDetailPage() {
                 組織図
               </button>
               <button
-                onClick={() => setActiveTab('equipment')}
+                onClick={() => setActiveTab('rack')}
                 className={`py-4 border-b-2 font-medium text-sm ${
-                  activeTab === 'equipment'
+                  activeTab === 'rack'
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {facility.name === '宗像HE' ? 'ヘッドエンド' : '機器・設備'}
+                ラック
+              </button>
+              <button
+                onClick={() => setActiveTab('power')}
+                className={`py-4 border-b-2 font-medium text-sm ${
+                  activeTab === 'power'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                電源設備
+              </button>
+              <button
+                onClick={() => setActiveTab('cooling')}
+                className={`py-4 border-b-2 font-medium text-sm ${
+                  activeTab === 'cooling'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                空調設備
+              </button>
+              <button
+                onClick={() => setActiveTab('disaster')}
+                className={`py-4 border-b-2 font-medium text-sm ${
+                  activeTab === 'disaster'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                防災設備
+              </button>
+              <button
+                onClick={() => setActiveTab('fuel')}
+                className={`py-4 border-b-2 font-medium text-sm ${
+                  activeTab === 'fuel'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                燃料タンク
+              </button>
+              <button
+                onClick={() => setActiveTab('other')}
+                className={`py-4 border-b-2 font-medium text-sm ${
+                  activeTab === 'other'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                その他
               </button>
               <button
                 onClick={() => setActiveTab('inspection')}
@@ -511,9 +561,9 @@ export default function FacilityDetailPage() {
               </>
             )}
 
-            {activeTab === 'equipment' && (
+            {activeTab === 'rack' && (
               <div>
-                {/* 宗像SHEの場合は専用の設備データを表示 */}
+                {/* 宗像HEの場合は専用の設備データを表示 */}
                 {facility.name === '宗像HE' ? (
                   <div className="space-y-8">
                     <HeadendRackViewSidebar />
@@ -948,6 +998,243 @@ export default function FacilityDetailPage() {
             {activeTab === 'work' && (
               <div>
                 <WorkLogs facilityId={facility.facilityId} />
+              </div>
+            )}
+
+            {/* 電源設備タブ */}
+            {activeTab === 'power' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">電源設備情報</h3>
+                  {facility.id === 95 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-3">主電源</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">総容量</span>
+                            <span className="font-medium">2000 kVA</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">現在使用量</span>
+                            <span className="font-medium">1250 kVA (62.5%)</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">冗長性</span>
+                            <span className="font-medium">N+1</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-3">UPS設備</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">容量</span>
+                            <span className="font-medium">500 kVA</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">バックアップ時間</span>
+                            <span className="font-medium">10分</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">バッテリー種類</span>
+                            <span className="font-medium">リチウムイオン</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-600">標準的な電源設備を配置しています。</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 空調設備タブ */}
+            {activeTab === 'cooling' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">空調設備情報</h3>
+                  {facility.id === 95 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-3">冷却システム</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">方式</span>
+                            <span className="font-medium">空冷（間接外気冷房併用）</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">総冷却能力</span>
+                            <span className="font-medium">1500 kW</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">現在負荷</span>
+                            <span className="font-medium">980 kW (65.3%)</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-3">環境制御</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">設定温度</span>
+                            <span className="font-medium">24°C</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">設定湿度</span>
+                            <span className="font-medium">45%</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">冗長性</span>
+                            <span className="font-medium">N+1</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-600">標準的な空調設備を配置しています。</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 防災設備タブ */}
+            {activeTab === 'disaster' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">防災設備情報</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-3">火災検知・消火設備</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600">煙感知器</span>
+                          <span className="font-medium text-green-600">正常</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600">温度感知器</span>
+                          <span className="font-medium text-green-600">正常</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600">消火設備</span>
+                          <span className="font-medium">ガス消火システム</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-3">その他防災設備</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600">避雷設備</span>
+                          <span className="font-medium">設置済み</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600">耐震対策</span>
+                          <span className="font-medium">免震構造</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600">非常放送設備</span>
+                          <span className="font-medium text-green-600">正常</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 燃料タンクタブ */}
+            {activeTab === 'fuel' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">燃料タンク情報</h3>
+                  {facility.id === 95 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-3">タンク仕様</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">容量</span>
+                            <span className="font-medium">5,000 リットル</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">現在残量</span>
+                            <span className="font-medium">4,200 リットル (84%)</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">燃料種別</span>
+                            <span className="font-medium">A重油</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 mb-3">運転可能時間</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">満タン時</span>
+                            <span className="font-medium">72時間</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">現在残量での運転時間</span>
+                            <span className="font-medium">約60時間</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b">
+                            <span className="text-gray-600">次回給油予定</span>
+                            <span className="font-medium">2025年2月15日</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-600">非常用発電機用の燃料タンクを設置しています。</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* その他タブ */}
+            {activeTab === 'other' && (
+              <div className="space-y-6">
+                <div className="bg-white rounded-lg p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">その他の設備</h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-3">セキュリティ設備</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600">監視カメラ</span>
+                          <span className="font-medium">48台設置</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600">入退室管理</span>
+                          <span className="font-medium">生体認証＋ICカード</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600">侵入検知</span>
+                          <span className="font-medium text-green-600">稼働中</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-gray-900 mb-3">付帯設備</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600">駐車場</span>
+                          <span className="font-medium">10台分</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600">会議室</span>
+                          <span className="font-medium">1室（10名収容）</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b">
+                          <span className="text-gray-600">倉庫</span>
+                          <span className="font-medium">2室</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
