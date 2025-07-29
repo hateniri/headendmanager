@@ -43,20 +43,6 @@ export default function MunakataHEDashboard() {
   
   return (
     <div className="space-y-6">
-      {/* ヘッダー情報 */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg p-6 text-white">
-        <div className="flex justify-between items-start">
-          <div>
-            <h2 className="text-2xl font-bold mb-2">宗像HE フラグシップモデル</h2>
-            <p className="text-blue-100">最先端のデータセンター施設</p>
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-blue-100">現在時刻</p>
-            <p className="text-xl font-mono">{currentTime.toLocaleTimeString('ja-JP')}</p>
-          </div>
-        </div>
-      </div>
-      
       {/* 主要メトリクス */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* 電力使用率 */}
