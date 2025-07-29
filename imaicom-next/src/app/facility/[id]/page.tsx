@@ -9,7 +9,7 @@ import {
   MapPin, User, Mail, Phone, Building2, Calendar, AlertCircle, 
   CheckCircle, Wrench, Thermometer, Droplets, Wind, Zap,
   Server, Camera, FileText, Download, ChevronRight, Clock,
-  Activity, Package, Shield, Edit, AlertTriangle, Image, Leaf
+  Activity, Package, Edit, AlertTriangle, Image, Leaf
 } from 'lucide-react'
 import { 
   regionalManagers,
@@ -27,8 +27,6 @@ import OrganizationChart from '@/components/OrganizationChart'
 import { FacilityDetail } from '@/data/facilities-with-full-details'
 import RealTimeMetrics from '@/components/RealTimeMetrics'
 import CameraView from '@/components/CameraView'
-import RemoteControl from '@/components/RemoteControl'
-import AccessLogs from '@/components/AccessLogs'
 import WorkLogs from '@/components/WorkLogs'
 import { 
   generateInspectionReport, 
@@ -75,7 +73,7 @@ export default function FacilityDetailPage() {
   const [fileDownloads, setFileDownloads] = useState<any[]>([])
   const [powerMetrics, setPowerMetrics] = useState<any>(null)
   const [inspectionPhotos, setInspectionPhotos] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState<'overview' | 'organization' | 'equipment' | 'inspection' | 'incident' | 'monitoring' | 'remote' | 'access' | 'work' | 'environment'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'organization' | 'equipment' | 'inspection' | 'incident' | 'monitoring' | 'work'>('overview')
 
   useEffect(() => {
     // Import facilities dynamically to avoid circular dependencies
@@ -334,26 +332,6 @@ export default function FacilityDetailPage() {
                 監視
               </button>
               <button
-                onClick={() => setActiveTab('remote')}
-                className={`py-4 border-b-2 font-medium text-sm ${
-                  activeTab === 'remote'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                リモート操作
-              </button>
-              <button
-                onClick={() => setActiveTab('access')}
-                className={`py-4 border-b-2 font-medium text-sm ${
-                  activeTab === 'access'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                入退室履歴
-              </button>
-              <button
                 onClick={() => setActiveTab('work')}
                 className={`py-4 border-b-2 font-medium text-sm ${
                   activeTab === 'work'
@@ -362,16 +340,6 @@ export default function FacilityDetailPage() {
                 }`}
               >
                 作業履歴
-              </button>
-              <button
-                onClick={() => setActiveTab('environment')}
-                className={`py-4 border-b-2 font-medium text-sm ${
-                  activeTab === 'environment'
-                    ? 'border-blue-600 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                消費電力・環境
               </button>
             </div>
           </div>
@@ -967,49 +935,6 @@ export default function FacilityDetailPage() {
               </div>
             )}
 
-            {/* Remote Control Tab */}
-            {activeTab === 'remote' && (
-              <div>
-                <RemoteControl facilityId={facility.facilityId} />
-                
-                {/* Digital Twin Section */}
-                <div className="mt-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">デジタルツイン</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div className="bg-white rounded-lg p-4">
-                      <h4 className="font-medium text-gray-900 mb-2">3Dモデル</h4>
-                      <div className="h-32 bg-gray-100 rounded flex items-center justify-center">
-                        <Package className="h-12 w-12 text-gray-400" />
-                      </div>
-                      <button className="mt-3 w-full px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
-                        3Dビューを開く
-                      </button>
-                    </div>
-                    
-                    <div className="bg-white rounded-lg p-4">
-                      <h4 className="font-medium text-gray-900 mb-2">熱分布マップ</h4>
-                      <div className="h-32 bg-gradient-to-br from-blue-500 via-green-500 to-red-500 opacity-20 rounded"></div>
-                      <div className="mt-2 text-xs text-gray-600">
-                        <div className="flex justify-between">
-                          <span>最低: 18°C</span>
-                          <span>最高: 28°C</span>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-white rounded-lg p-4">
-                      <h4 className="font-medium text-gray-900 mb-2">エアフロー解析</h4>
-                      <div className="h-32 bg-gray-100 rounded flex items-center justify-center">
-                        <Wind className="h-12 w-12 text-blue-400 animate-pulse" />
-                      </div>
-                      <p className="mt-2 text-xs text-gray-600">
-                        最適化提案: 2件
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Organization Tab */}
             {activeTab === 'organization' && (
@@ -1018,12 +943,6 @@ export default function FacilityDetailPage() {
               </div>
             )}
 
-            {/* Access Logs Tab */}
-            {activeTab === 'access' && (
-              <div>
-                <AccessLogs facilityId={facility.facilityId} />
-              </div>
-            )}
 
             {/* Work Logs Tab */}
             {activeTab === 'work' && (
@@ -1032,159 +951,6 @@ export default function FacilityDetailPage() {
               </div>
             )}
 
-            {activeTab === 'environment' && powerMetrics && (
-              <div className="space-y-6">
-                {/* 消費電力・環境メトリクス概要 */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                      <Zap className="h-5 w-5 mr-2 text-yellow-500" />
-                      月間消費電力
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600 dark:text-gray-400">消費電力量</span>
-                        <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          {powerMetrics.monthly.powerConsumption.toLocaleString()} kWh
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600 dark:text-gray-400">電気料金（概算）</span>
-                        <span className="text-xl font-semibold text-green-600">
-                          ¥{powerMetrics.monthly.electricityCost.toLocaleString()}
-                        </span>
-                      </div>
-                      <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                        <p className="text-sm text-blue-700 dark:text-blue-300">
-                          年間予想: {powerMetrics.annual.powerConsumption.toLocaleString()} kWh
-                          （¥{powerMetrics.annual.electricityCost.toLocaleString()}）
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                      <Wind className="h-5 w-5 mr-2 text-green-500" />
-                      CO₂排出量
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600 dark:text-gray-400">月間CO₂排出量</span>
-                        <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                          {powerMetrics.monthly.co2Emission.toLocaleString()} kg
-                        </span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-600 dark:text-gray-400">年間CO₂排出量</span>
-                        <span className="text-xl font-semibold text-red-600">
-                          {powerMetrics.annual.co2Emission.toLocaleString()} kg
-                        </span>
-                      </div>
-                      <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                        <p className="text-sm text-green-700 dark:text-green-300">
-                          CO₂排出係数: 0.518 kg-CO₂/kWh（日本平均）
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 機器別消費電力ランキング */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                    機器別月間消費電力ランキング
-                  </h3>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                      <thead className="bg-gray-50 dark:bg-gray-700">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            順位
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            機器ID/種別
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            月間消費電力
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            月間CO₂排出量
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                            状態
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                        {powerMetrics.equipment
-                          .sort((a: any, b: any) => b.monthlyPower - a.monthlyPower)
-                          .slice(0, 10)
-                          .map((eq: any, index: number) => (
-                            <tr key={eq.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-sm font-medium ${
-                                  index === 0 ? 'bg-yellow-100 text-yellow-800' :
-                                  index === 1 ? 'bg-gray-100 text-gray-800' :
-                                  index === 2 ? 'bg-orange-100 text-orange-800' :
-                                  'bg-gray-50 text-gray-600'
-                                }`}>
-                                  {index + 1}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div>
-                                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{eq.id}</p>
-                                  <p className="text-sm text-gray-500 dark:text-gray-400">{eq.type}</p>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                                  {eq.monthlyPower.toLocaleString()} kWh
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className="text-sm text-gray-600 dark:text-gray-400">
-                                  {eq.monthlyCO2.toLocaleString()} kg
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                  statusColors[eq.status as keyof typeof statusColors].bg
-                                } ${statusColors[eq.status as keyof typeof statusColors].text}`}>
-                                  {statusColors[eq.status as keyof typeof statusColors].label}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                {/* 環境負荷削減提案 */}
-                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center">
-                    <Shield className="h-5 w-5 mr-2 text-blue-500" />
-                    環境負荷削減提案
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <h4 className="font-medium text-green-800 dark:text-green-300 mb-2">省エネ機器への更新</h4>
-                      <p className="text-sm text-green-700 dark:text-green-400">
-                        償却済み機器を最新の省エネ機器に更新することで、月間約15%の消費電力削減が期待できます。
-                      </p>
-                    </div>
-                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">運用効率化</h4>
-                      <p className="text-sm text-blue-700 dark:text-blue-400">
-                        不要な機器の電源管理や運用時間の最適化により、追加の5-10%削減が可能です。
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
