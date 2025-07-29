@@ -84,55 +84,109 @@ export default function FacilityDetailPage() {
       if (foundFacility) {
         setFacility(foundFacility)
         
-        // 施設データを動的に生成
-        const facilityType = getFacilityType(facilityId)
-        const basicInfo = facilityBasicInfoTemplates[facilityType]
-        const regionManager = regionalManagers[foundFacility.region as keyof typeof regionalManagers] || regionalManagers['関東']
-        const equipment = generateEquipmentForFacility(facilityId, foundFacility.name)
-        
-        // CSVからの実際のデータを使用
-        const actualBasicInfo = {
-          ...basicInfo,
-          area: foundFacility.remarks.includes('高負荷施設') ? '約450㎡' : basicInfo.area,
-          remarks: foundFacility.remarks || basicInfo.remarks
+        // 宗像HEの場合は専用データを使用
+        if (foundFacility.id === 95) {
+          import('@/data/munakata-he-detail').then(({ munakataHEData }) => {
+            // 基本情報
+            setFacilityData({
+              basicInfo: {
+                facilityId: munakataHEData.basic.facilityId,
+                openedYear: `${munakataHEData.basic.openedYear}年`,
+                department: foundFacility.managementOrg,
+                area: `約${munakataHEData.basic.buildingInfo.totalArea}㎡`,
+                floors: `${munakataHEData.basic.buildingInfo.floors}階建て`,
+                accessRestriction: '24時間入退室管理',
+                remarks: `ラック数: ${munakataHEData.racks.total}台, 空調: ${munakataHEData.specifications.cooling.type}`
+              },
+              manager: regionalManagers['九州'].manager,
+              technicians: regionalManagers['九州'].technicians,
+              equipment: generateEquipmentForFacility(facilityId, foundFacility.name),
+              racks: generateRacksForFacility(facilityId),
+              inspectionHistory: generateInspectionHistory(facilityId),
+              incidents: munakataHEData.maintenanceHistory.map((m, i) => ({
+                id: `INC-${i + 1}`,
+                date: m.date,
+                time: '09:00',
+                equipment: m.type,
+                issue: m.description,
+                cause: m.type,
+                responder: '技術チーム',
+                action: m.description,
+                recoveryDate: m.date,
+                result: m.impact
+              })),
+              repairs: [],
+              environmentData: {
+                temperature: munakataHEData.metrics.temperature.current,
+                humidity: munakataHEData.metrics.humidity.current,
+                airflow: 3.2,
+                power: munakataHEData.metrics.power.currentUsage / 1000 * 100, // パーセント変換
+                lastUpdate: new Date().toLocaleString('ja-JP')
+              }
+            })
+            
+            // 電力メトリクスを専用データから設定
+            setPowerMetrics({
+              monthly: {
+                powerConsumption: munakataHEData.metrics.power.currentUsage * 24 * 30,
+                electricityCost: munakataHEData.metrics.power.cost,
+                co2Emission: munakataHEData.metrics.power.currentUsage * 24 * 30 * 0.518
+              },
+              annual: {
+                powerConsumption: munakataHEData.metrics.power.currentUsage * 24 * 365,
+                electricityCost: munakataHEData.metrics.power.cost * 12,
+                co2Emission: munakataHEData.metrics.power.currentUsage * 24 * 365 * 0.518
+              },
+              equipment: []
+            })
+          })
+        } else {
+          // 他の施設は既存のロジックを使用
+          const facilityType = getFacilityType(facilityId)
+          const basicInfo = facilityBasicInfoTemplates[facilityType]
+          const regionManager = regionalManagers[foundFacility.region as keyof typeof regionalManagers] || regionalManagers['関東']
+          const equipment = generateEquipmentForFacility(facilityId, foundFacility.name)
+          
+          const actualBasicInfo = {
+            ...basicInfo,
+            area: foundFacility.remarks.includes('高負荷施設') ? '約450㎡' : basicInfo.area,
+            remarks: foundFacility.remarks || basicInfo.remarks
+          }
+          
+          setFacilityData({
+            basicInfo: {
+              facilityId: foundFacility.facilityId,
+              openedYear: `${foundFacility.openedYear}年`,
+              department: foundFacility.managementOrg,
+              ...actualBasicInfo
+            },
+            manager: regionManager.manager,
+            technicians: regionManager.technicians,
+            equipment,
+            racks: generateRacksForFacility(facilityId),
+            inspectionHistory: generateInspectionHistory(facilityId),
+            incidents: generateIncidents(facilityId, equipment),
+            repairs: generateRepairs(facilityId, equipment),
+            environmentData: {
+              temperature: 22 + Math.random() * 4,
+              humidity: 40 + Math.random() * 20,
+              airflow: 2 + Math.random() * 2,
+              power: 20 + Math.random() * 30,
+              lastUpdate: new Date().toLocaleString('ja-JP')
+            }
+          })
+          
+          const powerData = calculateFacilityPowerMetrics(equipment)
+          setPowerMetrics(powerData)
         }
         
-        setFacilityData({
-          basicInfo: {
-            facilityId: foundFacility.facilityId,
-            openedYear: `${foundFacility.openedYear}年`,
-            department: foundFacility.managementOrg,
-            ...actualBasicInfo
-          },
-          manager: regionManager.manager,
-          technicians: regionManager.technicians,
-          equipment,
-          racks: generateRacksForFacility(facilityId),
-          inspectionHistory: generateInspectionHistory(facilityId),
-          incidents: generateIncidents(facilityId, equipment),
-          repairs: generateRepairs(facilityId, equipment),
-          environmentData: {
-            temperature: 22 + Math.random() * 4,
-            humidity: 40 + Math.random() * 20,
-            airflow: 2 + Math.random() * 2,
-            power: 20 + Math.random() * 30,
-            lastUpdate: new Date().toLocaleString('ja-JP')
-          }
-        })
-        
-        // 組織図データを生成
+        // 共通データの生成
         const orgChart = generateOrganizationChart(foundFacility.region, foundFacility.facilityId)
         setOrganizationData(orgChart)
         
-        // ファイルダウンロードデータを生成
         const downloads = generateFileDownloads(foundFacility.facilityId)
         setFileDownloads(downloads)
         
-        // 消費電力・CO₂排出量データを計算
-        const powerData = calculateFacilityPowerMetrics(equipment)
-        setPowerMetrics(powerData)
-        
-        // 点検写真データを生成
         const photos = generateInspectionPhotos(foundFacility.facilityId)
         setInspectionPhotos(photos)
       }
@@ -325,9 +379,20 @@ export default function FacilityDetailPage() {
           {/* Tab Content */}
           <div className="p-6">
             {activeTab === 'overview' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Basic Info */}
-                <div className="lg:col-span-1">
+              <>
+                {/* 宗像HE専用ダッシュボード */}
+                {facility.id === 95 && (
+                  <div className="mb-6">
+                    {(() => {
+                      const MunakataHEDashboard = require('@/components/MunakataHEDashboard').default
+                      return <MunakataHEDashboard />
+                    })()}
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Basic Info */}
+                  <div className="lg:col-span-1">
                   <h3 className="font-semibold text-gray-900 mb-4">基本情報</h3>
                   <div className="space-y-3 text-sm">
                     {facility.companyCode && (
@@ -475,6 +540,7 @@ export default function FacilityDetailPage() {
                   </div>
                 </div>
               </div>
+              </>
             )}
 
             {activeTab === 'equipment' && (
