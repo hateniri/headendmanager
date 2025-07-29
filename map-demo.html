@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MomentVault Map - 4DGS Content Locations</title>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css' rel='stylesheet' />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: #000;
+            font-family: 'Inter', -apple-system, sans-serif;
+        }
+        
+        #map { 
+            position: absolute; 
+            top: 0; 
+            bottom: 0; 
+            width: 100%; 
+        }
+        
+        .marker {
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, rgba(0,217,255,0.8) 0%, rgba(0,217,255,0) 70%);
+            border: 2px solid #00D9FF;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: pulse 2s infinite;
+            backdrop-filter: blur(10px);
+        }
+        
+        .marker.sold {
+            background: radial-gradient(circle, rgba(255,0,0,0.5) 0%, rgba(255,0,0,0) 70%);
+            border-color: #ff0000;
+            opacity: 0.6;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 217, 255, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(0, 217, 255, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(0, 217, 255, 0); }
+        }
+        
+        .popup-content {
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            min-width: 250px;
+        }
+        
+        .popup-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: #00D9FF;
+        }
+        
+        .popup-price {
+            font-size: 20px;
+            font-weight: bold;
+            background: linear-gradient(to right, #00D9FF, #0080FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .mapboxgl-popup-content {
+            background: transparent !important;
+            padding: 0 !important;
+            box-shadow: none !important;
+        }
+        
+        .mapboxgl-popup-tip {
+            border-top-color: rgba(0,0,0,0.9) !important;
+        }
+        
+        .overlay-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0,217,255,0.3);
+            border-radius: 15px;
+            padding: 20px;
+            color: white;
+            max-width: 300px;
+            z-index: 1;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: rgba(0,217,255,0.1);
+            border-radius: 10px;
+            border: 1px solid rgba(0,217,255,0.2);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00D9FF;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id='map'></div>
+    
+    <div class="overlay-panel">
+        <h2 class="text-xl font-light mb-4" style="color: #00D9FF; text-shadow: 0 0 20px rgba(0,217,255,0.5);">
+            4DGS Content Map
+        </h2>
+        <p class="text-sm text-gray-400 mb-4">
+            時空を超えた瞬間が記録された場所
+        </p>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value">6</div>
+                <div class="stat-label">Total Moments</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Available</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">¥7.1M</div>
+                <div class="stat-label">Total Value</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">5</div>
+                <div class="stat-label">Cities</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiaHRubCIsImEiOiJjbWRsMTg3MmUxNXJhMm1wemMwdGhsbzF1In0.IsdwN7eHMFRYhx1ajtBx5A';
+        
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/dark-v11',
+            center: [136.906605, 35.180188], // Japan center
+            zoom: 5.5,
+            pitch: 45,
+            bearing: -20
+        });
+
+        // 4DGS content locations
+        const locations = [
+            {
+                id: 1,
+                coordinates: [136.964694, 35.170915], // Nagoya Dome
+                title: "上原さくら - 2032年全国ツアー名古屋公演",
+                price: "¥1,000,000",
+                status: "active",
+                date: "2032.07.15",
+                venue: "名古屋ドーム"
+            },
+            {
+                id: 2,
+                coordinates: [139.817413, 35.693841], // Tokyo Dome
+                title: "橋本環奈 - Birthday Live 2031",
+                price: "¥1,500,000",
+                status: "sold",
+                date: "2031.02.03",
+                venue: "東京ドーム"
+            },
+            {
+                id: 3,
+                coordinates: [139.710070, 35.674000], // Nippon Budokan
+                title: "白石麻衣 - Graduation Concert Final",
+                price: "¥2,000,000",
+                status: "sold",
+                date: "2030.12.25",
+                venue: "日本武道館"
+            },
+            {
+                id: 4,
+                coordinates: [139.703992, 35.645736], // Zepp Tokyo
+                title: "齋藤飛鳥 - Solo Dance Performance",
+                price: "¥800,000",
+                status: "active",
+                date: "2032.09.10",
+                venue: "Zepp Tokyo"
+            },
+            {
+                id: 5,
+                coordinates: [139.702687, 35.670168], // Omotesando Hills
+                title: "与田祐希 - 写真集発売記念イベント",
+                price: "¥600,000",
+                status: "sold",
+                date: "2032.05.20",
+                venue: "表参道ヒルズ"
+            },
+            {
+                id: 6,
+                coordinates: [139.748135, 35.683211], // Imperial Theatre
+                title: "生田絵梨花 - Musical Finale",
+                price: "¥1,200,000",
+                status: "active",
+                date: "2032.11.30",
+                venue: "帝国劇場"
+            }
+        ];
+
+        map.on('load', () => {
+            // Add 3D buildings
+            map.addLayer({
+                'id': '3d-buildings',
+                'source': 'composite',
+                'source-layer': 'building',
+                'filter': ['==', 'extrude', 'true'],
+                'type': 'fill-extrusion',
+                'minzoom': 15,
+                'paint': {
+                    'fill-extrusion-color': '#1a1a1a',
+                    'fill-extrusion-height': ['get', 'height'],
+                    'fill-extrusion-base': ['get', 'min_height'],
+                    'fill-extrusion-opacity': 0.8
+                }
+            });
+
+            // Add markers
+            locations.forEach((location) => {
+                // Create marker element
+                const el = document.createElement('div');
+                el.className = `marker ${location.status === 'sold' ? 'sold' : ''}`;
+                el.innerHTML = location.status === 'sold' ? '🔒' : '💎';
+
+                // Create popup
+                const popup = new mapboxgl.Popup({ 
+                    offset: 25,
+                    closeButton: false,
+                    maxWidth: 'none'
+                })
+                .setHTML(`
+                    <div class="popup-content">
+                        <div class="popup-title">${location.title}</div>
+                        <div class="popup-price">${location.price}</div>
+                        <div class="text-sm text-gray-400">
+                            <div>📍 ${location.venue}</div>
+                            <div>📅 ${location.date}</div>
+                            <div class="mt-2">
+                                ${location.status === 'sold' 
+                                    ? '<span class="text-red-400">🔒 Sold Out</span>' 
+                                    : '<span class="text-green-400">✨ Available</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `);
+
+                // Add marker to map
+                new mapboxgl.Marker(el)
+                    .setLngLat(location.coordinates)
+                    .setPopup(popup)
+                    .addTo(map);
+
+                // Add hover effect
+                el.addEventListener('mouseenter', () => {
+                    el.style.transform = 'scale(1.2)';
+                });
+                
+                el.addEventListener('mouseleave', () => {
+                    el.style.transform = 'scale(1)';
+                });
+            });
+
+            // Add subtle animation to map
+            let rotating = true;
+            function rotateCamera(timestamp) {
+                if (rotating) {
+                    map.rotateTo((timestamp / 200) % 360, { duration: 0 });
+                    requestAnimationFrame(rotateCamera);
+                }
+            }
+            
+            // Start rotation on idle
+            map.on('idle', () => {
+                rotating = true;
+                rotateCamera(0);
+            });
+            
+            // Stop rotation on interaction
+            map.on('movestart', () => {
+                rotating = false;
+            });
+        });
+
+        // Add navigation controls
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        
+        // Add fullscreen control
+        map.addControl(new mapboxgl.FullscreenControl(), 'top-right');
+    </script>
+</body>
+</html>
