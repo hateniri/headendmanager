@@ -1,0 +1,24 @@
+/* Mapbox popup styles for facility names */
+.mapboxgl-popup {
+  max-width: 200px !important;
+}
+
+.mapboxgl-popup-content {
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  font-family: inherit !important;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: white !important;
+}
+
+.facility-popup .mapboxgl-popup-content {
+  background: white !important;
+  color: #111827 !important;
+}
+
+.facility-popup .mapboxgl-popup-tip {
+  border-top-color: white !important;
+}
