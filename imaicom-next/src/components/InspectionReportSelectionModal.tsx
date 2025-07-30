@@ -6,6 +6,7 @@ import UPSInspectionForm from './InspectionForms/UPSInspectionForm'
 import DistributionPanelInspectionForm from './InspectionForms/DistributionPanelInspectionForm'
 import UndergroundTankInspectionForm from './InspectionForms/UndergroundTankInspectionForm'
 import FireDetectionInspectionForm from './InspectionForms/FireDetectionInspectionForm'
+import HVACInspectionForm from './InspectionForms/HVACInspectionForm'
 
 interface InspectionReportSelectionModalProps {
   isOpen: boolean
@@ -19,7 +20,7 @@ const reportTypes = [
   { id: 'distribution-panel', name: '分電盤', icon: CircuitBoard, color: 'bg-green-500 hover:bg-green-600' },
   { id: 'underground-tank', name: '地下タンク', icon: Fuel, color: 'bg-gray-600 hover:bg-gray-700' },
   { id: 'fire-prediction', name: '火災予兆', icon: Flame, color: 'bg-red-500 hover:bg-red-600' },
-  { id: 'air-conditioning', name: '空調', icon: Wind, color: 'bg-cyan-500 hover:bg-cyan-600' },
+  { id: 'hvac', name: '空調・冷凍機器', icon: Wind, color: 'bg-cyan-500 hover:bg-cyan-600' },
   { id: 'battery', name: '蓄電池', icon: Battery, color: 'bg-yellow-500 hover:bg-yellow-600' },
   { id: 'disaster-prevention', name: '防災設備', icon: Shield, color: 'bg-purple-500 hover:bg-purple-600' },
   { id: 'emergency-generator', name: '非常用発電機', icon: Power, color: 'bg-orange-500 hover:bg-orange-600' },
@@ -37,6 +38,8 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
       setSelectedForm('underground-tank')
     } else if (reportTypeId === 'fire-prediction') {
       setSelectedForm('fire-prediction')
+    } else if (reportTypeId === 'hvac') {
+      setSelectedForm('hvac')
     } else {
       alert(`${reportTypes.find(r => r.id === reportTypeId)?.name}の点検報告フォームを開発中です。`)
     }
@@ -93,6 +96,21 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
   if (selectedForm === 'fire-prediction') {
     return (
       <FireDetectionInspectionForm
+        isOpen={true}
+        onClose={() => {
+          setSelectedForm(null)
+          onClose()
+        }}
+        facilityId={facilityId}
+        facilityName={facilityName}
+      />
+    )
+  }
+
+  // 空調・冷凍機器フォームが選択された場合
+  if (selectedForm === 'hvac') {
+    return (
+      <HVACInspectionForm
         isOpen={true}
         onClose={() => {
           setSelectedForm(null)
