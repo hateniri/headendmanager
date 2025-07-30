@@ -1,7 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Upload, Plus, Trash2, AlertCircle } from 'lucide-react'
+import { X, Upload, Plus, Trash2, AlertCircle, Download, FileSpreadsheet, FileText } from 'lucide-react'
+import CommonInspectionHeader, { CommonInspectionData } from './CommonInspectionHeader'
+import { exportToExcel, exportToPDF, formatInspectionDataForExcel } from '@/utils/exportUtils'
+import { useInspectionHistoryStore } from '@/store/inspectionHistoryStore'
 
 interface DistributionPanelInspectionFormProps {
   isOpen: boolean
@@ -22,17 +25,21 @@ interface CircuitMeasurement {
 }
 
 export default function DistributionPanelInspectionForm({ isOpen, onClose, facilityId, facilityName }: DistributionPanelInspectionFormProps) {
-  const [formData, setFormData] = useState({
-    // A. 基本情報
-    inspectionDate: new Date().toISOString().split('T')[0],
+  const addHistory = useInspectionHistoryStore((state) => state.addHistory)
+  
+  const [commonData, setCommonData] = useState<CommonInspectionData>({
+    inspectionStartDate: new Date().toISOString().split('T')[0],
+    inspectionEndDate: new Date().toISOString().split('T')[0],
     inspectionCompany: '',
-    measurers: '',
+    inspector: '',
     witness: '',
+    hasUrgentIssues: false,
+  })
+
+  const [formData, setFormData] = useState({
     panelName: '',
     panelTypes: [] as string[],
     upperSystem: '',
-    
-    // B. 作業手順チェック
     preworkChecks: {
       existingCircuitCheck: false,
       cablePinchCheck: false,
@@ -47,11 +54,7 @@ export default function DistributionPanelInspectionForm({ isOpen, onClose, facil
       doorClosureRecheck: false,
       statusReconfirmation: false,
     },
-    
-    // C. 主幹／分岐測定記録
     circuitMeasurements: [] as CircuitMeasurement[],
-    
-    // D. コメント・異常報告
     abnormalities: '',
     recommendedParts: [] as string[],
     replacementTiming: '',
@@ -62,10 +65,61 @@ export default function DistributionPanelInspectionForm({ isOpen, onClose, facil
   const panelTypeOptions = ['UPS', 'AC', 'DC', '空調', '通信', 'その他']
   const recommendedPartOptions = ['ブレーカー', 'ヒューズ', '端子', 'ケーブル', 'その他']
 
+  const calculateOverallJudgment = (): '良好' | '要注意' | '要修理' | '危険' => {
+    // 異常事項がある場合
+    if (formData.abnormalities) {
+      if (formData.abnormalities.includes('危険') || formData.abnormalities.includes('緊急')) {
+        return '危険'
+      }
+      if (formData.recommendedParts.length > 0) {
+        return '要修理'
+      }
+      return '要注意'
+    }
+    
+    // チェックリストの確認
+    const allChecked = 
+      formData.preworkChecks.existingCircuitCheck &&
+      formData.preworkChecks.cablePinchCheck &&
+      formData.preworkChecks.exposedPartCheck &&
+      formData.measurementChecks.rangeConfirmation &&
+      formData.measurementChecks.noExcessiveForce &&
+      formData.postworkChecks.noForgottenTools &&
+      formData.postworkChecks.doorClosureRecheck &&
+      formData.postworkChecks.statusReconfirmation
+    
+    if (!allChecked) {
+      return '要注意'
+    }
+    
+    return '良好'
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('分電盤点検データ:', formData)
-    console.log('アップロードファイル:', uploadedFiles)
+    
+    const overallJudgment = calculateOverallJudgment()
+    
+    // 点検履歴に保存
+    addHistory({
+      facilityId,
+      facilityName,
+      inspectionType: 'distribution-panel',
+      inspectionStartDate: commonData.inspectionStartDate,
+      inspectionEndDate: commonData.inspectionEndDate,
+      company: commonData.inspectionCompany,
+      inspector: commonData.inspector,
+      witness: commonData.witness,
+      hasUrgentIssues: commonData.hasUrgentIssues || overallJudgment === '危険' || overallJudgment === '要修理',
+      overallJudgment,
+      status: 'completed',
+      data: {
+        ...commonData,
+        ...formData,
+        uploadedFiles: uploadedFiles.map(f => f.name)
+      }
+    })
+    
     alert('分電盤点検報告を登録しました')
     onClose()
   }
@@ -80,16 +134,62 @@ export default function DistributionPanelInspectionForm({ isOpen, onClose, facil
     setUploadedFiles(uploadedFiles.filter((_, i) => i !== index))
   }
 
+  const handleExportExcel = () => {
+    const excelData = [
+      formatInspectionDataForExcel({ ...commonData, ...formData }, '分電盤'),
+      ...formData.circuitMeasurements.map(m => ({
+        回路名: m.circuitName,
+        相: m.phase,
+        AF設定: m.afSetting,
+        測定日: m.measurementDate,
+        状態: m.status,
+        電流値: m.currentValue,
+        測定者: m.measurer,
+      }))
+    ]
+    exportToExcel(excelData, `分電盤点検報告書_${facilityName}_${commonData.inspectionStartDate}.xlsx`, '分電盤点検')
+  }
+
+  const handleExportPDF = () => {
+    const columns = [
+      { header: '項目', dataKey: 'item' },
+      { header: '内容', dataKey: 'value' }
+    ]
+    
+    const data = [
+      { item: '施設名', value: facilityName },
+      { item: '点検期間', value: `${commonData.inspectionStartDate} ～ ${commonData.inspectionEndDate}` },
+      { item: '作業会社', value: commonData.inspectionCompany },
+      { item: '担当者', value: commonData.inspector },
+      { item: '立会者', value: commonData.witness || '-' },
+      { item: '分電盤名', value: formData.panelName },
+      { item: '盤種別', value: formData.panelTypes.join(', ') },
+      { item: '総合判定', value: calculateOverallJudgment() },
+      { item: '異常事項', value: formData.abnormalities || 'なし' },
+    ]
+    
+    exportToPDF(
+      '分電盤点検報告書',
+      data,
+      columns,
+      `分電盤点検報告書_${facilityName}_${commonData.inspectionStartDate}.pdf`,
+      [
+        { label: '施設名', value: facilityName },
+        { label: '点検日', value: commonData.inspectionStartDate }
+      ]
+    )
+  }
+
   const addCircuitMeasurement = () => {
     const newMeasurement: CircuitMeasurement = {
       id: Date.now().toString(),
       circuitName: '',
       phase: 'R',
       afSetting: '',
-      measurementDate: formData.inspectionDate,
+      measurementDate: commonData.inspectionStartDate,
       status: 'ON',
       currentValue: '',
-      measurer: '',
+      measurer: commonData.inspector,
     }
     setFormData({
       ...formData,
@@ -118,80 +218,54 @@ export default function DistributionPanelInspectionForm({ isOpen, onClose, facil
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">分電盤点検報告書</h2>
-            <p className="text-sm text-gray-600 mt-1">施設: {facilityName}</p>
+        <div className="sticky top-0 bg-white border-b z-10">
+          <div className="px-6 py-4">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">分電盤点検報告書</h2>
+                <p className="text-sm text-gray-600 mt-1">施設: {facilityName}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportExcel}
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Excel出力
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportPDF}
+                  className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 text-sm"
+                >
+                  <FileText className="h-4 w-4" />
+                  PDF出力
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
+          {/* 共通ヘッダー */}
+          <div className="mb-8">
+            <CommonInspectionHeader
+              data={commonData}
+              onChange={setCommonData}
+              facilityName={facilityName}
+            />
+          </div>
+
           {/* A. 基本情報 */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">A. 基本情報</h3>
-            <div className="bg-blue-50 p-4 rounded-lg mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    点検日 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.inspectionDate}
-                    onChange={(e) => setFormData({ ...formData, inspectionDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    点検会社 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.inspectionCompany}
-                    onChange={(e) => setFormData({ ...formData, inspectionCompany: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 株式会社〇〇メンテナンス"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    測定者 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.measurers}
-                    onChange={(e) => setFormData({ ...formData, measurers: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 栗山、中島"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    立会者
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.witness}
-                    onChange={(e) => setFormData({ ...formData, witness: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 佐藤花子"
-                  />
-                </div>
-              </div>
-            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">A. 分電盤基本情報</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
@@ -604,20 +678,42 @@ export default function DistributionPanelInspectionForm({ isOpen, onClose, facil
           </div>
 
           {/* ボタン */}
-          <div className="flex justify-end gap-3 pt-6 border-t">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              キャンセル
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              登録
-            </button>
+          <div className="sticky bottom-0 bg-white border-t px-6 py-4 -mx-6 -mb-6">
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportExcel}
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Excel出力
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportPDF}
+                  className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 text-sm"
+                >
+                  <FileText className="h-4 w-4" />
+                  PDF出力
+                </button>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  登録
+                </button>
+              </div>
+            </div>
           </div>
         </form>
       </div>

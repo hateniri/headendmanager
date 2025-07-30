@@ -1,7 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Upload, Plus, Trash2 } from 'lucide-react'
+import { X, Upload, Plus, Trash2, Download, FileSpreadsheet, FileText } from 'lucide-react'
+import { useInspectionHistoryStore } from '@/store/inspectionHistoryStore'
+import CommonInspectionHeader, { CommonInspectionData } from './CommonInspectionHeader'
+import { exportToExcel, exportToPDF, formatInspectionDataForExcel } from '@/utils/exportUtils'
 
 interface UPSInspectionFormProps {
   isOpen: boolean
@@ -11,12 +14,20 @@ interface UPSInspectionFormProps {
 }
 
 export default function UPSInspectionForm({ isOpen, onClose, facilityId, facilityName }: UPSInspectionFormProps) {
+  const { addHistory } = useInspectionHistoryStore()
+  
+  // 共通ヘッダーデータ
+  const [commonData, setCommonData] = useState<CommonInspectionData>({
+    inspectionStartDate: new Date().toISOString().split('T')[0],
+    inspectionEndDate: new Date().toISOString().split('T')[0],
+    inspectionCompany: '',
+    inspector: '',
+    witness: '',
+    hasUrgentIssues: false,
+  })
+  
   const [formData, setFormData] = useState({
-    // 1. 点検基本情報
-    inspectionDate: new Date().toISOString().split('T')[0],
-    workCompany: '',
-    workerName: '',
-    witnessName: '',
+    // 1. 機器基本情報
     manufacturer: '',
     model: '',
     manufactureDate: '',
@@ -75,11 +86,92 @@ export default function UPSInspectionForm({ isOpen, onClose, facilityId, facilit
 
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
 
+  // 総合判定を決定する関数
+  const determineOverallJudgment = (): '良好' | '要注意' | '要修理' | '危険' => {
+    // 危険判定の条件
+    if (
+      formData.abnormalities.includes('火災') ||
+      formData.abnormalities.includes('発火') ||
+      formData.abnormalities.includes('煙') ||
+      formData.abnormalities.includes('異常加熱') ||
+      formData.visualChecks.capacitorExpansion === '×' // コンデンサ膨張・漏れ
+    ) {
+      return '危険'
+    }
+
+    // 要修理判定の条件
+    const hasVisualAbnormality = Object.values(formData.visualChecks).includes('×')
+    const hasFunctionAbnormality = 
+      formData.noLoadStartStop === '×' ||
+      formData.inverterToBypass === '×' ||
+      formData.bypassToInverter === '×'
+    const hasReplacedParts = formData.replacedParts.length > 0
+    
+    if (hasVisualAbnormality || hasFunctionAbnormality || hasReplacedParts) {
+      return '要修理'
+    }
+
+    // 要注意判定の条件
+    const hasAbnormalities = formData.abnormalities.trim() !== ''
+    const hasHighTemperature = parseFloat(formData.temperature) > 35
+    const hasLowInsulation = parseFloat(formData.insulationResistance) < 10
+    const hasBadVentilation = formData.ventilationStatus === '悪い'
+    const hasRecommendedParts = formData.recommendedParts.trim() !== ''
+    
+    if (hasAbnormalities || hasHighTemperature || hasLowInsulation || hasBadVentilation || hasRecommendedParts) {
+      return '要注意'
+    }
+
+    // その他は良好
+    return '良好'
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('UPS点検データ:', formData)
+    
+    // 総合判定を決定
+    const overallJudgment = determineOverallJudgment()
+    
+    // 緊急異常がある場合は自動的にフラグを立てる
+    if (overallJudgment === '危険' || overallJudgment === '要修理') {
+      setCommonData(prev => ({ ...prev, hasUrgentIssues: true }))
+    }
+    
+    // 点検履歴に保存
+    addHistory({
+      facilityId: facilityId,
+      facilityName: facilityName,
+      inspectionType: 'ups',
+      inspectionStartDate: commonData.inspectionStartDate,
+      inspectionEndDate: commonData.inspectionEndDate,
+      inspector: commonData.inspector,
+      company: commonData.inspectionCompany,
+      witness: commonData.witness,
+      hasUrgentIssues: commonData.hasUrgentIssues || overallJudgment === '危険' || overallJudgment === '要修理',
+      status: 'completed',
+      overallJudgment: overallJudgment,
+      data: {
+        ...commonData,
+        ...formData,
+        uploadedFiles: uploadedFiles.map(file => ({
+          name: file.name,
+          size: file.size,
+          type: file.type
+        }))
+      }
+    })
+    
+    console.log('UPS点検データ:', { ...commonData, ...formData })
     console.log('アップロードファイル:', uploadedFiles)
-    alert('UPS点検報告を登録しました')
+    console.log('総合判定:', overallJudgment)
+    
+    // 緊急通知が必要な場合
+    if (commonData.hasUrgentIssues) {
+      alert(`⚠️ 緊急通知\n\nUPS点検で緊急性の高い異常が発見されました。\n総合判定: ${overallJudgment}\n\n管理者への通知を行います。`)
+    } else {
+      alert(`UPS点検報告を登録しました。\n総合判定: ${overallJudgment}`)
+    }
+    
     onClose()
   }
 
@@ -91,6 +183,58 @@ export default function UPSInspectionForm({ isOpen, onClose, facilityId, facilit
 
   const removeFile = (index: number) => {
     setUploadedFiles(uploadedFiles.filter((_, i) => i !== index))
+  }
+
+  // Excel出力
+  const handleExportToExcel = () => {
+    const excelData = [
+      formatInspectionDataForExcel({ ...commonData, ...formData }, 'UPS'),
+    ]
+    
+    // バッテリー測定データがある場合は別シートに出力
+    if (formData.batteryVoltages.length > 0) {
+      const batteryData = formData.batteryVoltages.map((v, i) => ({
+        セル番号: v.cellNumber,
+        電圧: v.voltage,
+        内部抵抗: formData.batteryResistances[i]?.resistance || '',
+      }))
+      
+      // 実際にはXLSXライブラリを使って複数シートを作成
+      exportToExcel(excelData, `UPS点検報告書_${facilityName}_${commonData.inspectionStartDate}.xlsx`, 'UPS点検')
+    } else {
+      exportToExcel(excelData, `UPS点検報告書_${facilityName}_${commonData.inspectionStartDate}.xlsx`, 'UPS点検')
+    }
+  }
+
+  // PDF出力
+  const handleExportToPDF = () => {
+    const columns = [
+      { header: '項目', dataKey: 'item' },
+      { header: '値', dataKey: 'value' },
+    ]
+    
+    const data = [
+      { item: 'UPS容量', value: `${formData.upsCapacity} kVA` },
+      { item: 'バッテリー構成', value: formData.batteryConfig },
+      { item: '温度', value: `${formData.temperature}°C` },
+      { item: '湿度', value: `${formData.humidity}%` },
+      { item: '総合判定', value: determineOverallJudgment() },
+    ]
+    
+    const additionalInfo = [
+      { label: '施設名', value: facilityName },
+      { label: '点検期間', value: `${commonData.inspectionStartDate} ～ ${commonData.inspectionEndDate}` },
+      { label: '作業会社', value: commonData.inspectionCompany },
+      { label: '担当者', value: commonData.inspector },
+    ]
+    
+    exportToPDF(
+      'UPS点検報告書',
+      data,
+      columns,
+      `UPS点検報告書_${facilityName}_${commonData.inspectionStartDate}.pdf`,
+      additionalInfo
+    )
   }
 
   const addBatteryMeasurement = () => {
@@ -143,86 +287,53 @@ export default function UPSInspectionForm({ isOpen, onClose, facilityId, facilit
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
+        <div className="sticky top-0 bg-blue-600 text-white px-6 py-4 flex justify-between items-center">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">UPS点検報告書</h2>
-            <p className="text-sm text-gray-600 mt-1">施設: {facilityName}</p>
+            <h2 className="text-xl font-semibold">UPS点検報告書</h2>
+            <p className="text-blue-100 text-sm mt-1">拠点: {facilityName}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleExportToExcel}
+              className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors text-sm"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Excel
+            </button>
+            <button
+              type="button"
+              onClick={handleExportToPDF}
+              className="flex items-center gap-2 px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
+            >
+              <FileText className="h-4 w-4" />
+              PDF
+            </button>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-blue-700 rounded-lg transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6">
-          {/* 1. 点検基本情報 */}
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">1. 点検基本情報</h3>
-            <div className="bg-blue-50 p-4 rounded-lg mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    点検実施日 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.inspectionDate}
-                    onChange={(e) => setFormData({ ...formData, inspectionDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    作業会社名 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.workCompany}
-                    onChange={(e) => setFormData({ ...formData, workCompany: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 株式会社〇〇メンテナンス"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    担当者名 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.workerName}
-                    onChange={(e) => setFormData({ ...formData, workerName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 山田太郎"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    立会者名
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.witnessName}
-                    onChange={(e) => setFormData({ ...formData, witnessName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 佐藤花子"
-                  />
-                </div>
-              </div>
-            </div>
+        <div className="overflow-y-auto max-h-[calc(90vh-80px)]">
+          <form id="ups-inspection-form" onSubmit={handleSubmit} className="p-6 space-y-8">
+            {/* 共通ヘッダー */}
+            <CommonInspectionHeader
+              data={commonData}
+              onChange={setCommonData}
+              facilityName={facilityName}
+            />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+            {/* 1. 機器基本情報 */}
+            <section className="bg-gray-50 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">1. 機器基本情報</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                   メーカー名 <span className="text-red-500">*</span>
                 </label>
                 <input
@@ -247,7 +358,6 @@ export default function UPSInspectionForm({ isOpen, onClose, facilityId, facilit
                   required
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   製造年月
@@ -288,7 +398,7 @@ export default function UPSInspectionForm({ isOpen, onClose, facilityId, facilit
                 </select>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* 2. 設備構成情報 */}
           <div className="mb-8">
@@ -848,23 +958,46 @@ export default function UPSInspectionForm({ isOpen, onClose, facilityId, facilit
             </div>
           </div>
 
-          {/* ボタン */}
-          <div className="flex justify-end gap-3 pt-6 border-t">
+          </form>
+        </div>
+        
+        {/* フッター */}
+        <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t flex justify-between">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleExportToExcel}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+              Excel出力
+            </button>
+            <button
+              type="button"
+              onClick={handleExportToPDF}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+            >
+              <FileText className="h-4 w-4" />
+              PDF出力
+            </button>
+          </div>
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
             >
               キャンセル
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              form="ups-inspection-form"
+              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
-              登録
+              保存
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )

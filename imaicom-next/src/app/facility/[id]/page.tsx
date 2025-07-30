@@ -43,6 +43,7 @@ import HeadendRackView from '@/components/HeadendRackView'
 import HeadendRackViewSidebar from '@/components/HeadendRackViewSidebar'
 import EquipmentRegistrationModal from '@/components/EquipmentRegistrationModal'
 import InspectionReportSelectionModal from '@/components/InspectionReportSelectionModal'
+import InspectionHistory from '@/components/InspectionHistory'
 
 // 施設タイプごとの基本情報テンプレート
 const facilityBasicInfoTemplates = {
@@ -779,133 +780,10 @@ export default function FacilityDetailPage() {
             )}
 
             {activeTab === 'inspection' && (
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-semibold text-gray-900">点検履歴</h3>
-                  <button 
-                    onClick={() => alert('点検記録追加機能を開発中です。現在はシステム生成データを表示しています。')}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                  >
-                    点検記録追加
-                  </button>
-                </div>
-                
-                <div className="space-y-4">
-                  {facilityData.inspectionHistory.map((inspection: any) => (
-                    <div key={inspection.id} className="bg-white border border-gray-200 rounded-lg shadow-sm">
-                      {/* 点検ヘッダー */}
-                      <div className="p-4 border-b border-gray-200">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="flex items-center space-x-4 mb-2">
-                              <span className="text-sm font-medium text-gray-900">{inspection.id}</span>
-                              <span className="text-sm text-gray-600">{inspection.date}</span>
-                              <span className={`px-2 py-1 text-xs rounded-full ${
-                                inspection.result === '良' ? 'bg-green-100 text-green-700' :
-                                inspection.result === '注意' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-red-100 text-red-700'
-                              }`}>
-                                {inspection.result}
-                              </span>
-                              {inspection.category && (
-                                <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
-                                  {inspection.category}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex items-center space-x-6">
-                              <p className="text-sm font-medium text-gray-900">{inspection.target}</p>
-                              <div className="flex items-center text-sm text-gray-500">
-                                <User className="h-4 w-4 mr-1" />
-                                {inspection.inspector}
-                              </div>
-                              {inspection.hasPhoto && (
-                                <div className="flex items-center text-sm text-gray-500">
-                                  <Camera className="h-4 w-4 mr-1" />
-                                  写真あり
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          <button 
-                            onClick={() => alert(`点検詳細: ${inspection.id}\n\n詳細な点検結果とデータの確認機能を開発中です。`)}
-                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                          >
-                            詳細
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* 点検項目詳細 */}
-                      {inspection.items && inspection.items.length > 0 && (
-                        <div className="p-4">
-                          <h4 className="text-sm font-medium text-gray-900 mb-3">点検項目結果</h4>
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                            {inspection.items.map((item: any, index: number) => (
-                              <div key={index} className={`p-3 rounded-lg border ${
-                                item.status === 'normal' ? 'bg-green-50 border-green-200' :
-                                item.status === 'warning' ? 'bg-yellow-50 border-yellow-200' :
-                                item.status === 'critical' ? 'bg-red-50 border-red-200' :
-                                'bg-gray-50 border-gray-200'
-                              }`}>
-                                <div className="flex justify-between items-start mb-2">
-                                  <span className="text-sm font-medium text-gray-900">{item.name}</span>
-                                  <span className={`px-2 py-1 text-xs rounded-full ${
-                                    item.status === 'normal' ? 'bg-green-100 text-green-700' :
-                                    item.status === 'warning' ? 'bg-yellow-100 text-yellow-700' :
-                                    item.status === 'critical' ? 'bg-red-100 text-red-700' :
-                                    'bg-gray-100 text-gray-700'
-                                  }`}>
-                                    {item.status === 'normal' ? '正常' :
-                                     item.status === 'warning' ? '要注意' :
-                                     item.status === 'critical' ? '要対応' : '点検済み'}
-                                  </span>
-                                </div>
-                                
-                                {/* 測定値 */}
-                                {item.measuredValue && (
-                                  <div className="mb-2">
-                                    <div className="flex items-center justify-between text-sm">
-                                      <span className="text-gray-600">測定値:</span>
-                                      <span className={`font-medium ${
-                                        item.status === 'critical' ? 'text-red-600' :
-                                        item.status === 'warning' ? 'text-yellow-600' :
-                                        'text-green-600'
-                                      }`}>
-                                        {item.measuredValue}{item.unit || ''}
-                                      </span>
-                                    </div>
-                                    {item.normalRange && (
-                                      <div className="text-xs text-gray-500 mt-1">
-                                        正常範囲: {item.normalRange}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* コメント */}
-                                {item.comment && (
-                                  <p className="text-xs text-gray-600 mt-2">{item.comment}</p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* 総合コメント */}
-                      {inspection.comment && (
-                        <div className="px-4 pb-4">
-                          <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
-                            <span className="font-medium">総合所見: </span>
-                            {inspection.comment}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <InspectionHistory 
+                facilityId={facility.facilityId}
+                facilityName={facility.name}
+              />
             )}
 
             {activeTab === 'incident' && (

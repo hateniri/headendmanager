@@ -54,7 +54,7 @@ interface InsulationMeasurement {
 }
 
 export default function HVACInspectionForm({ isOpen, onClose, facilityId, facilityName }: HVACInspectionFormProps) {
-  const addHistory = useInspectionHistoryStore((state) => state.addHistory)
+  const addInspection = useInspectionHistoryStore((state) => state.addInspection)
   
   const [commonData, setCommonData] = useState<CommonInspectionData>({
     inspectionStartDate: new Date().toISOString().split('T')[0],
@@ -183,14 +183,13 @@ export default function HVACInspectionForm({ isOpen, onClose, facilityId, facili
     return '良好'
   }
 
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
     const overallJudgment = calculateOverallJudgment()
     
     // 点検履歴に保存
-    addHistory({
+    addInspection({
       facilityId,
       facilityName,
       inspectionType: 'hvac',
@@ -201,8 +200,7 @@ export default function HVACInspectionForm({ isOpen, onClose, facilityId, facili
       witness: commonData.witness,
       hasUrgentIssues: commonData.hasUrgentIssues || overallJudgment === '危険' || overallJudgment === '要修理',
       overallJudgment,
-      status: 'completed',
-      data: {
+      details: {
         ...commonData,
         ...formData,
         uploadedFiles: uploadedFiles.map(f => f.name)
@@ -1000,8 +998,6 @@ export default function HVACInspectionForm({ isOpen, onClose, facilityId, facili
                 </button>
               </div>
             </div>
-          </div>
-          </div>
           </div>
         </form>
       </div>

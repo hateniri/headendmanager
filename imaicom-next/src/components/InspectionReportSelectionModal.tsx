@@ -7,6 +7,9 @@ import DistributionPanelInspectionForm from './InspectionForms/DistributionPanel
 import UndergroundTankInspectionForm from './InspectionForms/UndergroundTankInspectionForm'
 import FireDetectionInspectionForm from './InspectionForms/FireDetectionInspectionForm'
 import HVACInspectionForm from './InspectionForms/HVACInspectionForm'
+import BatteryInspectionForm from './InspectionForms/BatteryInspectionForm'
+import DisasterPreventionInspectionForm from './InspectionForms/DisasterPreventionInspectionForm'
+import EmergencyGeneratorInspectionForm from './InspectionForms/EmergencyGeneratorInspectionForm'
 
 interface InspectionReportSelectionModalProps {
   isOpen: boolean
@@ -40,6 +43,12 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
       setSelectedForm('fire-prediction')
     } else if (reportTypeId === 'hvac') {
       setSelectedForm('hvac')
+    } else if (reportTypeId === 'battery') {
+      setSelectedForm('battery')
+    } else if (reportTypeId === 'disaster-prevention') {
+      setSelectedForm('disaster-prevention')
+    } else if (reportTypeId === 'emergency-generator') {
+      setSelectedForm('emergency-generator')
     } else {
       alert(`${reportTypes.find(r => r.id === reportTypeId)?.name}の点検報告フォームを開発中です。`)
     }
@@ -111,6 +120,51 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
   if (selectedForm === 'hvac') {
     return (
       <HVACInspectionForm
+        isOpen={true}
+        onClose={() => {
+          setSelectedForm(null)
+          onClose()
+        }}
+        facilityId={facilityId}
+        facilityName={facilityName}
+      />
+    )
+  }
+
+  // 蓄電池フォームが選択された場合
+  if (selectedForm === 'battery') {
+    return (
+      <BatteryInspectionForm
+        isOpen={true}
+        onClose={() => {
+          setSelectedForm(null)
+          onClose()
+        }}
+        facilityId={facilityId}
+        facilityName={facilityName}
+      />
+    )
+  }
+
+  // 防災設備フォームが選択された場合
+  if (selectedForm === 'disaster-prevention') {
+    return (
+      <DisasterPreventionInspectionForm
+        isOpen={true}
+        onClose={() => {
+          setSelectedForm(null)
+          onClose()
+        }}
+        facilityId={facilityId}
+        facilityName={facilityName}
+      />
+    )
+  }
+
+  // 非常用発電機フォームが選択された場合
+  if (selectedForm === 'emergency-generator') {
+    return (
+      <EmergencyGeneratorInspectionForm
         isOpen={true}
         onClose={() => {
           setSelectedForm(null)

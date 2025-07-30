@@ -1,7 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Upload, Plus, Trash2, AlertCircle } from 'lucide-react'
+import { X, Upload, Plus, Trash2, AlertCircle, Download, FileSpreadsheet, FileText } from 'lucide-react'
+import CommonInspectionHeader, { CommonInspectionData } from './CommonInspectionHeader'
+import { exportToExcel, exportToPDF, formatInspectionDataForExcel } from '@/utils/exportUtils'
+import { useInspectionHistoryStore } from '@/store/inspectionHistoryStore'
 
 interface UndergroundTankInspectionFormProps {
   isOpen: boolean
@@ -17,12 +20,19 @@ interface PressureTestData {
 }
 
 export default function UndergroundTankInspectionForm({ isOpen, onClose, facilityId, facilityName }: UndergroundTankInspectionFormProps) {
-  const [formData, setFormData] = useState({
-    // 1. 基本情報
-    inspectionDate: new Date().toISOString().split('T')[0],
+  const addHistory = useInspectionHistoryStore((state) => state.addHistory)
+  
+  const [commonData, setCommonData] = useState<CommonInspectionData>({
+    inspectionStartDate: new Date().toISOString().split('T')[0],
+    inspectionEndDate: new Date().toISOString().split('T')[0],
     inspectionCompany: '',
     inspector: '',
     witness: '',
+    hasUrgentIssues: false,
+  })
+
+  const [formData, setFormData] = useState({
+    // 1. 基本情報
     inspectionType: '年次点検',
     permitNumber: '',
     installationDate: '',
@@ -92,10 +102,64 @@ export default function UndergroundTankInspectionForm({ isOpen, onClose, facilit
   const productNameOptions = ['軽油', 'A重油', 'ガソリン', 'その他']
   const structureTypeOptions = ['SF二重殻タンク', 'FRP', 'SS二重殻タンク', 'その他']
 
+  const calculateOverallJudgment = (): '良好' | '要注意' | '要修理' | '危険' => {
+    // 危険・緊急性の高い異常
+    if (formData.abnormalities && (
+      formData.abnormalities.includes('漏洩') || 
+      formData.abnormalities.includes('漏洞') || 
+      formData.abnormalities.includes('緊急')
+    )) {
+      return '危険'
+    }
+    
+    // 修理が必要な項目
+    const hasCriticalFailure = 
+      formData.tankBody.leakDetection === '×' ||
+      formData.tankBody.detectionLayerTest === '×' ||
+      (formData.pipingEquipment.groundingResistance && parseFloat(formData.pipingEquipment.groundingResistance) > 1)
+    
+    if (hasCriticalFailure) {
+      return '要修理'
+    }
+    
+    // 注意が必要な項目
+    const hasWarning = Object.values(formData.groundEquipment).includes('×') ||
+      Object.values(formData.pipingEquipment).includes('×') ||
+      Object.values(formData.tankBody).includes('×') ||
+      Object.values(formData.pumpEquipment).includes('×')
+    
+    if (hasWarning) {
+      return '要注意'
+    }
+    
+    return '良好'
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('地下タンク点検データ:', formData)
-    console.log('アップロードファイル:', uploadedFiles)
+    
+    const overallJudgment = calculateOverallJudgment()
+    
+    // 点検履歴に保存
+    addHistory({
+      facilityId,
+      facilityName,
+      inspectionType: 'underground-tank',
+      inspectionStartDate: commonData.inspectionStartDate,
+      inspectionEndDate: commonData.inspectionEndDate,
+      company: commonData.inspectionCompany,
+      inspector: commonData.inspector,
+      witness: commonData.witness,
+      hasUrgentIssues: commonData.hasUrgentIssues || overallJudgment === '危険' || overallJudgment === '要修理',
+      overallJudgment,
+      status: 'completed',
+      data: {
+        ...commonData,
+        ...formData,
+        uploadedFiles: uploadedFiles.map(f => f.name)
+      }
+    })
+    
     alert('地下タンク点検報告を登録しました')
     onClose()
   }
@@ -138,6 +202,48 @@ export default function UndergroundTankInspectionForm({ isOpen, onClose, facilit
     })
   }
 
+  const handleExportExcel = () => {
+    const excelData = [
+      formatInspectionDataForExcel({ ...commonData, ...formData }, '地下タンク'),
+      ...formData.pressureTestData.map(d => ({
+        時間: `${d.time}分`,
+        圧力: `${d.pressure}kPa`
+      }))
+    ]
+    exportToExcel(excelData, `地下タンク点検報告書_${facilityName}_${commonData.inspectionStartDate}.xlsx`, '地下タンク点検')
+  }
+
+  const handleExportPDF = () => {
+    const columns = [
+      { header: '項目', dataKey: 'item' },
+      { header: '内容', dataKey: 'value' }
+    ]
+    
+    const data = [
+      { item: '施設名', value: facilityName },
+      { item: '点検期間', value: `${commonData.inspectionStartDate} ～ ${commonData.inspectionEndDate}` },
+      { item: '作業会社', value: commonData.inspectionCompany },
+      { item: '担当者', value: commonData.inspector },
+      { item: '立会者', value: commonData.witness || '-' },
+      { item: '品名', value: formData.productName },
+      { item: '容量', value: `${formData.capacity}L` },
+      { item: '構造種別', value: formData.structureType },
+      { item: '総合判定', value: calculateOverallJudgment() },
+      { item: '異常事項', value: formData.abnormalities || 'なし' },
+    ]
+    
+    exportToPDF(
+      '地下タンク点検報告書',
+      data,
+      columns,
+      `地下タンク点検報告書_${facilityName}_${commonData.inspectionStartDate}.pdf`,
+      [
+        { label: '施設名', value: facilityName },
+        { label: '点検日', value: commonData.inspectionStartDate }
+      ]
+    )
+  }
+
   // 接地抵抗の自動判定
   const getGroundingStatus = (resistance: string) => {
     const value = parseFloat(resistance)
@@ -150,80 +256,54 @@ export default function UndergroundTankInspectionForm({ isOpen, onClose, facilit
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900">地下タンク点検報告書</h2>
-            <p className="text-sm text-gray-600 mt-1">施設: {facilityName}</p>
+        <div className="sticky top-0 bg-white border-b z-10">
+          <div className="px-6 py-4">
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">地下タンク点検報告書</h2>
+                <p className="text-sm text-gray-600 mt-1">施設: {facilityName}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportExcel}
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Excel出力
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportPDF}
+                  className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 text-sm"
+                >
+                  <FileText className="h-4 w-4" />
+                  PDF出力
+                </button>
+                <button
+                  onClick={onClose}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <X className="h-5 w-5 text-gray-500" />
-          </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6">
+          {/* 共通ヘッダー */}
+          <div className="mb-8">
+            <CommonInspectionHeader
+              data={commonData}
+              onChange={setCommonData}
+              facilityName={facilityName}
+            />
+          </div>
+
           {/* 1. 基本情報セクション */}
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">1. 基本情報セクション</h3>
-            <div className="bg-blue-50 p-4 rounded-lg mb-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    点検実施日 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.inspectionDate}
-                    onChange={(e) => setFormData({ ...formData, inspectionDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    点検会社 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.inspectionCompany}
-                    onChange={(e) => setFormData({ ...formData, inspectionCompany: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 株式会社〇〇メンテナンス"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    担当者 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.inspector}
-                    onChange={(e) => setFormData({ ...formData, inspector: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 山田太郎"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    立会者
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.witness}
-                    onChange={(e) => setFormData({ ...formData, witness: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="例: 佐藤花子"
-                  />
-                </div>
-              </div>
-            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">1. 地下タンク基本情報</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
@@ -1046,20 +1126,42 @@ export default function UndergroundTankInspectionForm({ isOpen, onClose, facilit
           </div>
 
           {/* ボタン */}
-          <div className="flex justify-end gap-3 pt-6 border-t">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              キャンセル
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              登録
-            </button>
+          <div className="sticky bottom-0 bg-white border-t px-6 py-4 -mx-6 -mb-6">
+            <div className="flex justify-between items-center">
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleExportExcel}
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 text-sm"
+                >
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Excel出力
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportPDF}
+                  className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2 text-sm"
+                >
+                  <FileText className="h-4 w-4" />
+                  PDF出力
+                </button>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  登録
+                </button>
+              </div>
+            </div>
           </div>
         </form>
       </div>
