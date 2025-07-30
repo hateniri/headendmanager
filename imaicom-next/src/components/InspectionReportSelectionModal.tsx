@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { X, Zap, CircuitBoard, Fuel, Flame, Wind, Battery, Shield, Power } from 'lucide-react'
 import UPSInspectionForm from './InspectionForms/UPSInspectionForm'
 import DistributionPanelInspectionForm from './InspectionForms/DistributionPanelInspectionForm'
+import UndergroundTankInspectionForm from './InspectionForms/UndergroundTankInspectionForm'
 
 interface InspectionReportSelectionModalProps {
   isOpen: boolean
@@ -30,6 +31,8 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
       setSelectedForm('ups')
     } else if (reportTypeId === 'distribution-panel') {
       setSelectedForm('distribution-panel')
+    } else if (reportTypeId === 'underground-tank') {
+      setSelectedForm('underground-tank')
     } else {
       alert(`${reportTypes.find(r => r.id === reportTypeId)?.name}の点検報告フォームを開発中です。`)
     }
@@ -55,6 +58,20 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
   if (selectedForm === 'distribution-panel') {
     return (
       <DistributionPanelInspectionForm
+        isOpen={true}
+        onClose={() => {
+          setSelectedForm(null)
+          onClose()
+        }}
+        facilityId={facilityId}
+      />
+    )
+  }
+
+  // 地下タンクフォームが選択された場合
+  if (selectedForm === 'underground-tank') {
+    return (
+      <UndergroundTankInspectionForm
         isOpen={true}
         onClose={() => {
           setSelectedForm(null)
