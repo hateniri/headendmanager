@@ -23,9 +23,9 @@ export default function EquipmentRegistrationModal({ isOpen, onClose, facilityId
     status: '運用機',
     installDate: '',
     disposalFlag: '',
-    inventoryTarget: '棚卸',
+    inventoryTarget: 'はい',
     amount: '',
-    subsidyTarget: '-',
+    subsidyTarget: '',
     assetMemo: '',
     registrant: '',
   })
@@ -58,9 +58,9 @@ export default function EquipmentRegistrationModal({ isOpen, onClose, facilityId
       status: '運用機',
       installDate: '',
       disposalFlag: '',
-      inventoryTarget: '棚卸',
+      inventoryTarget: 'はい',
       amount: '',
-      subsidyTarget: '-',
+      subsidyTarget: '',
       assetMemo: '',
       registrant: '',
     })
@@ -120,7 +120,7 @@ export default function EquipmentRegistrationModal({ isOpen, onClose, facilityId
                 ピッチ番号
               </label>
               <input
-                type="text"
+                type="number"
                 value={formData.pitchNumber}
                 onChange={(e) => setFormData({ ...formData, pitchNumber: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -134,10 +134,12 @@ export default function EquipmentRegistrationModal({ isOpen, onClose, facilityId
                 スロット番号
               </label>
               <input
-                type="text"
+                type="number"
                 value={formData.slotNumber}
                 onChange={(e) => setFormData({ ...formData, slotNumber: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="0"
+                min="0"
               />
             </div>
             
@@ -264,8 +266,8 @@ export default function EquipmentRegistrationModal({ isOpen, onClose, facilityId
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">-</option>
-                <option value="除却済">除却済</option>
-                <option value="除却予定">除却予定</option>
+                <option value="はい">はい</option>
+                <option value="いいえ">いいえ</option>
               </select>
             </div>
             
@@ -279,8 +281,8 @@ export default function EquipmentRegistrationModal({ isOpen, onClose, facilityId
                 onChange={(e) => setFormData({ ...formData, inventoryTarget: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="棚卸">棚卸</option>
-                <option value="対象外">対象外</option>
+                <option value="はい">はい</option>
+                <option value="いいえ">いいえ</option>
               </select>
             </div>
             
@@ -308,9 +310,9 @@ export default function EquipmentRegistrationModal({ isOpen, onClose, facilityId
                 onChange={(e) => setFormData({ ...formData, subsidyTarget: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="-">-</option>
-                <option value="対象">対象</option>
-                <option value="非対象">非対象</option>
+                <option value="">-</option>
+                <option value="はい">はい</option>
+                <option value="いいえ">いいえ</option>
               </select>
             </div>
             
