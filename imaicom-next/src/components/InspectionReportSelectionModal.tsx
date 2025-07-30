@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { X, Zap, CircuitBoard, Fuel, Flame, Wind, Battery, Shield, Power } from 'lucide-react'
+import UPSInspectionForm from './InspectionForms/UPSInspectionForm'
 
 interface InspectionReportSelectionModalProps {
   isOpen: boolean
@@ -20,13 +22,33 @@ const reportTypes = [
 ]
 
 export default function InspectionReportSelectionModal({ isOpen, onClose, facilityId }: InspectionReportSelectionModalProps) {
-  const handleSelection = (reportType: string) => {
-    alert(`${reportType}の点検報告フォームを開発中です。`)
-    onClose()
+  const [selectedForm, setSelectedForm] = useState<string | null>(null)
+  
+  const handleSelection = (reportTypeId: string) => {
+    if (reportTypeId === 'ups') {
+      setSelectedForm('ups')
+    } else {
+      alert(`${reportTypes.find(r => r.id === reportTypeId)?.name}の点検報告フォームを開発中です。`)
+    }
   }
 
-  if (!isOpen) return null
+  if (!isOpen && !selectedForm) return null
 
+  // UPSフォームが選択された場合
+  if (selectedForm === 'ups') {
+    return (
+      <UPSInspectionForm
+        isOpen={true}
+        onClose={() => {
+          setSelectedForm(null)
+          onClose()
+        }}
+        facilityId={facilityId}
+      />
+    )
+  }
+
+  // 選択画面を表示
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl">
@@ -49,7 +71,7 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
               return (
                 <button
                   key={type.id}
-                  onClick={() => handleSelection(type.name)}
+                  onClick={() => handleSelection(type.id)}
                   className={`p-6 rounded-lg text-white ${type.color} transition-all transform hover:scale-105 hover:shadow-lg`}
                 >
                   <Icon className="h-8 w-8 mx-auto mb-3" />
