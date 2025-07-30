@@ -7,6 +7,7 @@ import {
   Wifi, Shield, AlertCircle, TrendingUp, Package,
   Activity, Gauge, Database
 } from 'lucide-react'
+import RealTimeMetrics from '@/components/RealTimeMetrics'
 
 export default function MunakataHEDashboard() {
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -43,83 +44,13 @@ export default function MunakataHEDashboard() {
   
   return (
     <div className="space-y-6">
-      {/* 主要メトリクス */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* 電力使用率 */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <Zap className="h-8 w-8 text-yellow-500 mr-3" />
-              <div>
-                <p className="text-sm text-gray-600">電力使用率</p>
-                <p className="text-2xl font-bold">{powerUsagePercent.toFixed(1)}%</p>
-              </div>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full ${powerUsagePercent > 80 ? 'bg-red-500' : powerUsagePercent > 60 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                style={{ width: `${powerUsagePercent}%` }}
-              />
-            </div>
-            <p className="text-xs text-gray-500">
-              {metrics.power.currentUsage.toFixed(0)} / {munakataHEData.specifications.power.totalCapacity} kVA
-            </p>
-          </div>
-        </div>
-        
-        {/* 温度 */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <Thermometer className="h-8 w-8 text-red-500 mr-3" />
-              <div>
-                <p className="text-sm text-gray-600">平均温度</p>
-                <p className="text-2xl font-bold">{metrics.temperature.current.toFixed(1)}°C</p>
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>最小: {metrics.temperature.min24h.toFixed(1)}°C</span>
-            <span>最大: {metrics.temperature.max24h.toFixed(1)}°C</span>
-          </div>
-        </div>
-        
-        {/* PUE */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <Gauge className="h-8 w-8 text-green-500 mr-3" />
-              <div>
-                <p className="text-sm text-gray-600">PUE値</p>
-                <p className="text-2xl font-bold">{metrics.power.pue}</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-xs text-gray-500">
-            <p>業界平均: 1.8</p>
-            <p className="text-green-600 font-medium">優秀な効率性</p>
-          </div>
-        </div>
-        
-        {/* ラック使用率 */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <Server className="h-8 w-8 text-blue-500 mr-3" />
-              <div>
-                <p className="text-sm text-gray-600">ラック使用率</p>
-                <p className="text-2xl font-bold">{rackUsagePercent.toFixed(0)}%</p>
-              </div>
-            </div>
-          </div>
-          <div className="text-xs text-gray-500">
-            <p>使用中: {munakataHEData.racks.occupied}台</p>
-            <p>空き: {munakataHEData.racks.available}台</p>
-          </div>
-        </div>
-      </div>
+      {/* 環境データ（リアルタイム） */}
+      <RealTimeMetrics
+        baseTemp={metrics.temperature.current}
+        baseHumidity={metrics.humidity.current}
+        baseAirflow={3.2}
+        basePower={metrics.power.currentUsage / 20}
+      />
       
       {/* 詳細情報 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

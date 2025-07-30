@@ -9,7 +9,7 @@ import {
   MapPin, User, Mail, Phone, Building2, Calendar, AlertCircle, 
   CheckCircle, Wrench, Thermometer, Droplets, Wind, Zap,
   Server, Camera, FileText, Download, ChevronRight, Clock,
-  Activity, Package, Edit, AlertTriangle, Image, Leaf
+  Activity, Package, AlertTriangle, Image, Leaf
 } from 'lucide-react'
 import { 
   regionalManagers,
@@ -257,13 +257,22 @@ export default function FacilityDetailPage() {
                 )}
               </div>
             </div>
-            <button 
-              onClick={() => alert('施設情報の編集画面を開発中です。現在は表示のみとなります。')}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
-            >
-              <Edit className="h-4 w-4 mr-2" />
-              編集
-            </button>
+            <div className="flex gap-2">
+              <button 
+                onClick={() => alert('新規機器登録機能を開発中です。')}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                新規機器登録
+              </button>
+              <button 
+                onClick={() => alert('点検報告登録機能を開発中です。')}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center"
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                点検報告登録
+              </button>
+            </div>
           </div>
         </div>
 
