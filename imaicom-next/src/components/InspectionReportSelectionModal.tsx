@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { X, Zap, CircuitBoard, Fuel, Flame, Wind, Battery, Shield, Power } from 'lucide-react'
 import UPSInspectionForm from './InspectionForms/UPSInspectionForm'
+import DistributionPanelInspectionForm from './InspectionForms/DistributionPanelInspectionForm'
 
 interface InspectionReportSelectionModalProps {
   isOpen: boolean
@@ -27,6 +28,8 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
   const handleSelection = (reportTypeId: string) => {
     if (reportTypeId === 'ups') {
       setSelectedForm('ups')
+    } else if (reportTypeId === 'distribution-panel') {
+      setSelectedForm('distribution-panel')
     } else {
       alert(`${reportTypes.find(r => r.id === reportTypeId)?.name}の点検報告フォームを開発中です。`)
     }
@@ -38,6 +41,20 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
   if (selectedForm === 'ups') {
     return (
       <UPSInspectionForm
+        isOpen={true}
+        onClose={() => {
+          setSelectedForm(null)
+          onClose()
+        }}
+        facilityId={facilityId}
+      />
+    )
+  }
+
+  // 分電盤フォームが選択された場合
+  if (selectedForm === 'distribution-panel') {
+    return (
+      <DistributionPanelInspectionForm
         isOpen={true}
         onClose={() => {
           setSelectedForm(null)
