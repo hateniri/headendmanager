@@ -7,13 +7,12 @@ interface UPSInspectionFormProps {
   isOpen: boolean
   onClose: () => void
   facilityId: string
+  facilityName: string
 }
 
-export default function UPSInspectionForm({ isOpen, onClose, facilityId }: UPSInspectionFormProps) {
+export default function UPSInspectionForm({ isOpen, onClose, facilityId, facilityName }: UPSInspectionFormProps) {
   const [formData, setFormData] = useState({
     // 1. 点検基本情報
-    facilityName: '',
-    sheName: '',
     inspectionDate: new Date().toISOString().split('T')[0],
     workCompany: '',
     workerName: '',
@@ -146,7 +145,10 @@ export default function UPSInspectionForm({ isOpen, onClose, facilityId }: UPSIn
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900">UPS点検報告書</h2>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">UPS点検報告書</h2>
+            <p className="text-sm text-gray-600 mt-1">施設: {facilityName}</p>
+          </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -159,82 +161,65 @@ export default function UPSInspectionForm({ isOpen, onClose, facilityId }: UPSIn
           {/* 1. 点検基本情報 */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">1. 点検基本情報</h3>
+            <div className="bg-blue-50 p-4 rounded-lg mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    点検実施日 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.inspectionDate}
+                    onChange={(e) => setFormData({ ...formData, inspectionDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    作業会社名 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.workCompany}
+                    onChange={(e) => setFormData({ ...formData, workCompany: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="例: 株式会社〇〇メンテナンス"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    担当者名 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.workerName}
+                    onChange={(e) => setFormData({ ...formData, workerName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="例: 山田太郎"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    立会者名
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.witnessName}
+                    onChange={(e) => setFormData({ ...formData, witnessName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="例: 佐藤花子"
+                  />
+                </div>
+              </div>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  拠点名（局名・施設名） <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.facilityName}
-                  onChange={(e) => setFormData({ ...formData, facilityName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  SHE/HE名称
-                </label>
-                <input
-                  type="text"
-                  value={formData.sheName}
-                  onChange={(e) => setFormData({ ...formData, sheName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  点検実施日 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={formData.inspectionDate}
-                  onChange={(e) => setFormData({ ...formData, inspectionDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  作業会社名 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.workCompany}
-                  onChange={(e) => setFormData({ ...formData, workCompany: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  担当者名 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.workerName}
-                  onChange={(e) => setFormData({ ...formData, workerName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  立会者名（任意）
-                </label>
-                <input
-                  type="text"
-                  value={formData.witnessName}
-                  onChange={(e) => setFormData({ ...formData, witnessName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -291,21 +276,16 @@ export default function UPSInspectionForm({ isOpen, onClose, facilityId }: UPSIn
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   点検種別 <span className="text-red-500">*</span>
                 </label>
-                <div className="space-y-2">
-                  {['定期', '臨時', '故障後'].map((type) => (
-                    <label key={type} className="flex items-center">
-                      <input
-                        type="radio"
-                        name="inspectionType"
-                        value={type}
-                        checked={formData.inspectionType === type}
-                        onChange={(e) => setFormData({ ...formData, inspectionType: e.target.value })}
-                        className="mr-2"
-                      />
-                      <span className="text-sm">{type}</span>
-                    </label>
-                  ))}
-                </div>
+                <select
+                  value={formData.inspectionType}
+                  onChange={(e) => setFormData({ ...formData, inspectionType: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                >
+                  <option value="定期">定期</option>
+                  <option value="臨時">臨時</option>
+                  <option value="故障後">故障後</option>
+                </select>
               </div>
             </div>
           </div>
@@ -657,66 +637,48 @@ export default function UPSInspectionForm({ isOpen, onClose, facilityId }: UPSIn
             <div className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     無負荷起動／停止確認
                   </label>
-                  <div className="space-x-4">
-                    {['○', '×', '－'].map((value) => (
-                      <label key={value} className="inline-flex items-center">
-                        <input
-                          type="radio"
-                          name="noLoadStartStop"
-                          value={value}
-                          checked={formData.noLoadStartStop === value}
-                          onChange={(e) => setFormData({ ...formData, noLoadStartStop: e.target.value })}
-                          className="mr-1"
-                        />
-                        <span className="text-sm">{value}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <select
+                    value={formData.noLoadStartStop}
+                    onChange={(e) => setFormData({ ...formData, noLoadStartStop: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="○">○（正常）</option>
+                    <option value="×">×（異常）</option>
+                    <option value="－">－（未実施）</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     インバータ→バイパス手動切替
                   </label>
-                  <div className="space-x-4">
-                    {['○', '×', '－'].map((value) => (
-                      <label key={value} className="inline-flex items-center">
-                        <input
-                          type="radio"
-                          name="inverterToBypass"
-                          value={value}
-                          checked={formData.inverterToBypass === value}
-                          onChange={(e) => setFormData({ ...formData, inverterToBypass: e.target.value })}
-                          className="mr-1"
-                        />
-                        <span className="text-sm">{value}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <select
+                    value={formData.inverterToBypass}
+                    onChange={(e) => setFormData({ ...formData, inverterToBypass: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="○">○（正常）</option>
+                    <option value="×">×（異常）</option>
+                    <option value="－">－（未実施）</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     バイパス→インバータ手動切替
                   </label>
-                  <div className="space-x-4">
-                    {['○', '×', '－'].map((value) => (
-                      <label key={value} className="inline-flex items-center">
-                        <input
-                          type="radio"
-                          name="bypassToInverter"
-                          value={value}
-                          checked={formData.bypassToInverter === value}
-                          onChange={(e) => setFormData({ ...formData, bypassToInverter: e.target.value })}
-                          className="mr-1"
-                        />
-                        <span className="text-sm">{value}</span>
-                      </label>
-                    ))}
-                  </div>
+                  <select
+                    value={formData.bypassToInverter}
+                    onChange={(e) => setFormData({ ...formData, bypassToInverter: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="○">○（正常）</option>
+                    <option value="×">×（異常）</option>
+                    <option value="－">－（未実施）</option>
+                  </select>
                 </div>
               </div>
 
@@ -747,24 +709,17 @@ export default function UPSInspectionForm({ isOpen, onClose, facilityId }: UPSIn
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   波形測定
                 </label>
-                <div className="space-x-4">
-                  {['有', '無'].map((value) => (
-                    <label key={value} className="inline-flex items-center">
-                      <input
-                        type="radio"
-                        name="waveformMeasurement"
-                        value={value}
-                        checked={formData.waveformMeasurement === value}
-                        onChange={(e) => setFormData({ ...formData, waveformMeasurement: e.target.value })}
-                        className="mr-1"
-                      />
-                      <span className="text-sm">{value}</span>
-                    </label>
-                  ))}
-                </div>
+                <select
+                  value={formData.waveformMeasurement}
+                  onChange={(e) => setFormData({ ...formData, waveformMeasurement: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="有">有</option>
+                  <option value="無">無</option>
+                </select>
               </div>
             </div>
           </div>

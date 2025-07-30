@@ -11,6 +11,7 @@ interface InspectionReportSelectionModalProps {
   isOpen: boolean
   onClose: () => void
   facilityId: string
+  facilityName: string
 }
 
 const reportTypes = [
@@ -24,7 +25,7 @@ const reportTypes = [
   { id: 'emergency-generator', name: '非常用発電機', icon: Power, color: 'bg-orange-500 hover:bg-orange-600' },
 ]
 
-export default function InspectionReportSelectionModal({ isOpen, onClose, facilityId }: InspectionReportSelectionModalProps) {
+export default function InspectionReportSelectionModal({ isOpen, onClose, facilityId, facilityName }: InspectionReportSelectionModalProps) {
   const [selectedForm, setSelectedForm] = useState<string | null>(null)
   
   const handleSelection = (reportTypeId: string) => {
@@ -53,6 +54,7 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
           onClose()
         }}
         facilityId={facilityId}
+        facilityName={facilityName}
       />
     )
   }
@@ -67,6 +69,7 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
           onClose()
         }}
         facilityId={facilityId}
+        facilityName={facilityName}
       />
     )
   }
@@ -81,6 +84,7 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
           onClose()
         }}
         facilityId={facilityId}
+        facilityName={facilityName}
       />
     )
   }
@@ -95,6 +99,7 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
           onClose()
         }}
         facilityId={facilityId}
+        facilityName={facilityName}
       />
     )
   }

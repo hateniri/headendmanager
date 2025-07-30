@@ -7,17 +7,17 @@ interface FireDetectionInspectionFormProps {
   isOpen: boolean
   onClose: () => void
   facilityId: string
+  facilityName: string
 }
 
-export default function FireDetectionInspectionForm({ isOpen, onClose, facilityId }: FireDetectionInspectionFormProps) {
+export default function FireDetectionInspectionForm({ isOpen, onClose, facilityId, facilityName }: FireDetectionInspectionFormProps) {
   const [formData, setFormData] = useState({
     // 1. 基本情報
-    facilityName: '',
-    location: '',
     inspectionDate: new Date().toISOString().split('T')[0],
-    inspectionType: '年次',
     inspectionCompany: '',
+    inspector: '',
     witnessName: '',
+    inspectionType: '年次',
     equipmentInfo: '',
     
     // 2. 警報盤 点検項目
@@ -148,7 +148,10 @@ export default function FireDetectionInspectionForm({ isOpen, onClose, facilityI
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900">火災予兆検知システム点検報告書</h2>
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">火災予兆検知システム点検報告書</h2>
+            <p className="text-sm text-gray-600 mt-1">施設: {facilityName}</p>
+          </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -161,93 +164,82 @@ export default function FireDetectionInspectionForm({ isOpen, onClose, facilityI
           {/* 1. 基本情報 */}
           <div className="mb-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b">1. 基本情報</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  拠点名（HE/SHE） <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.facilityName}
-                  onChange={(e) => setFormData({ ...formData, facilityName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例: 熊本SHE"
-                  required
-                />
-              </div>
+            <div className="bg-blue-50 p-4 rounded-lg mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    点検実施日 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.inspectionDate}
+                    onChange={(e) => setFormData({ ...formData, inspectionDate: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  所在地
-                </label>
-                <input
-                  type="text"
-                  value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    点検会社 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.inspectionCompany}
+                    onChange={(e) => setFormData({ ...formData, inspectionCompany: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="例: 株式会社〇〇メンテナンス"
+                    required
+                  />
+                </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  点検実施日 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="date"
-                  value={formData.inspectionDate}
-                  onChange={(e) => setFormData({ ...formData, inspectionDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    担当者名 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.inspector}
+                    onChange={(e) => setFormData({ ...formData, inspector: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="例: 山田太郎"
+                    required
+                  />
+                </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    立会者名
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.witnessName}
+                    onChange={(e) => setFormData({ ...formData, witnessName: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="例: 佐藤花子"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   点検区分 <span className="text-red-500">*</span>
                 </label>
-                <div className="space-y-2">
-                  {['年次', '月次', '臨時'].map((type) => (
-                    <label key={type} className="flex items-center">
-                      <input
-                        type="radio"
-                        name="inspectionType"
-                        value={type}
-                        checked={formData.inspectionType === type}
-                        onChange={(e) => setFormData({ ...formData, inspectionType: e.target.value })}
-                        className="mr-2"
-                      />
-                      <span className="text-sm">{type}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  点検会社・担当者名 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.inspectionCompany}
-                  onChange={(e) => setFormData({ ...formData, inspectionCompany: e.target.value })}
+                <select
+                  value={formData.inspectionType}
+                  onChange={(e) => setFormData({ ...formData, inspectionType: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
-                />
+                >
+                  <option value="年次">年次</option>
+                  <option value="月次">月次</option>
+                  <option value="臨時">臨時</option>
+                </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  立会者名（任意）
-                </label>
-                <input
-                  type="text"
-                  value={formData.witnessName}
-                  onChange={(e) => setFormData({ ...formData, witnessName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div className="lg:col-span-3">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   使用機器情報
                 </label>

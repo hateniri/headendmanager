@@ -1392,6 +1392,7 @@ export default function FacilityDetailPage() {
         isOpen={isInspectionModalOpen}
         onClose={() => setIsInspectionModalOpen(false)}
         facilityId={facility?.facilityId || ''}
+        facilityName={facility?.name || ''}
       />
       </div>
     </ProtectedRoute>
