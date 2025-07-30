@@ -5,6 +5,7 @@ import { X, Zap, CircuitBoard, Fuel, Flame, Wind, Battery, Shield, Power } from 
 import UPSInspectionForm from './InspectionForms/UPSInspectionForm'
 import DistributionPanelInspectionForm from './InspectionForms/DistributionPanelInspectionForm'
 import UndergroundTankInspectionForm from './InspectionForms/UndergroundTankInspectionForm'
+import FireDetectionInspectionForm from './InspectionForms/FireDetectionInspectionForm'
 
 interface InspectionReportSelectionModalProps {
   isOpen: boolean
@@ -33,6 +34,8 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
       setSelectedForm('distribution-panel')
     } else if (reportTypeId === 'underground-tank') {
       setSelectedForm('underground-tank')
+    } else if (reportTypeId === 'fire-prediction') {
+      setSelectedForm('fire-prediction')
     } else {
       alert(`${reportTypes.find(r => r.id === reportTypeId)?.name}の点検報告フォームを開発中です。`)
     }
@@ -72,6 +75,20 @@ export default function InspectionReportSelectionModal({ isOpen, onClose, facili
   if (selectedForm === 'underground-tank') {
     return (
       <UndergroundTankInspectionForm
+        isOpen={true}
+        onClose={() => {
+          setSelectedForm(null)
+          onClose()
+        }}
+        facilityId={facilityId}
+      />
+    )
+  }
+
+  // 火災予兆フォームが選択された場合
+  if (selectedForm === 'fire-prediction') {
+    return (
+      <FireDetectionInspectionForm
         isOpen={true}
         onClose={() => {
           setSelectedForm(null)
