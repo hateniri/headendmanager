@@ -41,6 +41,7 @@ import RackLayoutView from '@/components/RackLayoutView'
 import RackLayoutDetailedView from '@/components/RackLayoutDetailedView'
 import HeadendRackView from '@/components/HeadendRackView'
 import HeadendRackViewSidebar from '@/components/HeadendRackViewSidebar'
+import EquipmentRegistrationModal from '@/components/EquipmentRegistrationModal'
 
 // 施設タイプごとの基本情報テンプレート
 const facilityBasicInfoTemplates = {
@@ -74,6 +75,7 @@ export default function FacilityDetailPage() {
   const [powerMetrics, setPowerMetrics] = useState<any>(null)
   const [inspectionPhotos, setInspectionPhotos] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'overview' | 'organization' | 'rack' | 'power' | 'cooling' | 'disaster' | 'fuel' | 'other' | 'inspection' | 'incident' | 'monitoring' | 'work'>('overview')
+  const [isEquipmentModalOpen, setIsEquipmentModalOpen] = useState(false)
 
   useEffect(() => {
     // Import facilities dynamically to avoid circular dependencies
@@ -259,7 +261,7 @@ export default function FacilityDetailPage() {
             </div>
             <div className="flex gap-2">
               <button 
-                onClick={() => alert('新規機器登録機能を開発中です。')}
+                onClick={() => setIsEquipmentModalOpen(true)}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center"
               >
                 <Package className="h-4 w-4 mr-2" />
@@ -1375,6 +1377,13 @@ export default function FacilityDetailPage() {
           )}
         </div>
       </main>
+      
+      {/* Equipment Registration Modal */}
+      <EquipmentRegistrationModal
+        isOpen={isEquipmentModalOpen}
+        onClose={() => setIsEquipmentModalOpen(false)}
+        facilityId={facility?.facilityId || ''}
+      />
       </div>
     </ProtectedRoute>
   )
